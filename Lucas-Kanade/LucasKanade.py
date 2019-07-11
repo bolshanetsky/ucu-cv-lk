@@ -1,4 +1,7 @@
 import numpy as np
+import cv2
+import glob
+import time
 from scipy.interpolate import RectBivariateSpline
 
 
@@ -16,6 +19,8 @@ def LucasKanade(temp, frame, roi, p0 = np.zeros(2)):
     Iy, Ix = np.gradient(frame)
     delta_p = 1
     while np.square(delta_p).sum() > THRESHOLD:
+
+        #print("THRESH = ",np.square(delta_p).sum())
         
         #STEP 1 warp image
         px, py = p0[0], p0[1]
@@ -67,6 +72,48 @@ def LucasKanade(temp, frame, roi, p0 = np.zeros(2)):
         #update parameters
         p0[0] += delta_p[0,0]
         p0[1] += delta_p[1,0]
-        
+    #print ("p0 = ", p0)
     p = p0
     return p
+
+
+#TEST
+def load_images(path):
+    '''
+    Loads images into array
+    '''
+    image_files = sorted(glob.glob(path))
+    images = []
+    for idx, file in enumerate(image_files):
+        images.append(cv2.imread(file, cv2.IMREAD_GRAYSCALE))
+    return images
+
+def main():
+    TEST_DATA_PATH = '../template-matching/images/*.jpg'
+
+    # TEST
+    # template = cv2.imread(TEST_DATA_PATH + "/template.png", cv2.IMREAD_GRAYSCALE)
+    rect = [233, 233 , 350 , 270]
+    current_frame = test_images[0]
+
+    print(len(test_images))
+
+    for next_frame in test_images[1:]:
+        print(rect)
+        p = LucasKanade(current_frame, next_frame, rect)
+        rect[0] += int(p[0])
+        rect[1] += int(p[1])
+        rect[2] += int(p[0])
+        rect[3] += int(p[1])
+        
+        cv2.rectangle(next_frame, (rect[0], rect[1]), (rect[2], rect[3]), (0,0,200), 3)
+        cv2.imshow("Frame", next_frame)
+
+        key = cv2.waitKey(1)
+        time.sleep(5)
+        if key == 27:
+            break
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
